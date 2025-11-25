@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Base styles */
+h1 {
+  @apply text-3xl font-bold tracking-tight text-slate-900;
+}
+
+h2 {
+  @apply text-xl font-semibold tracking-tight text-slate-800;
+}
+
+input,
+select,
+textarea {
+  @apply w-full border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:outline-none rounded-xl transition-all duration-200 hover:border-slate-300;
+}
+
+button {
+  @apply transition-all duration-200 active:scale-95;
+}
+
+/* Component styles */
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-slate-100 p-6;
+}
+
+.btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg rounded-lg px-4 py-2 font-medium;
+}
+
+.btn-secondary {
+  @apply bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-lg px-4 py-2 font-medium;
+}
+
+.btn-danger {
+  @apply bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg px-3 py-2 font-medium;
+}
+
+.input-group {
+  @apply flex flex-col gap-1.5;
+}
+
+.input-label {
+  @apply text-sm font-medium text-slate-700;
+}
+
+/* Scanner Customization */
+#html5qr-code-full-region {
+  @apply rounded-xl overflow-hidden bg-slate-100;
+}
+
+#html5qr-code-full-region video {
+  @apply object-cover w-full h-full rounded-xl;
+}
+
+#html5qr-code-full-region__scan_region {
+  @apply bg-transparent;
+}
+
+#html5qr-code-full-region__dashboard_section_csr button {
+  @apply bg-white text-slate-900 px-4 py-2 rounded-lg font-medium text-sm border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm;
+}
+
+#html5qr-code-full-region__dashboard_section_swaplink {
+  @apply text-blue-400 hover:text-blue-300 text-sm font-medium underline decoration-blue-400/30 underline-offset-4;
+}
+
+#html5qr-code-full-region__header_message {
+  @apply text-slate-400 text-xs mt-2;
+}
+
+/* Modal Animations */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
