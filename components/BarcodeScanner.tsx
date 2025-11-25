@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library'
-import { X, Camera } from 'lucide-react'
+import { X, Camera, RefreshCcw } from 'lucide-react'
 
 interface BarcodeScannerProps {
     onScan: (barcode: string) => void
@@ -17,54 +17,70 @@ export default function BarcodeScanner({ onScan, onClose, autoClose = true }: Ba
     const [isScanning, setIsScanning] = useState(false)
     const [error, setError] = useState<string>('')
     const [cameraReady, setCameraReady] = useState(false)
+    const [videoInputDevices, setVideoInputDevices] = useState<MediaDeviceInfo[]>([])
+    const [selectedDeviceId, setSelectedDeviceId] = useState<string>('')
 
+    // Initialize reader and devices
     useEffect(() => {
+        const codeReader = new BrowserMultiFormatReader()
+        readerRef.current = codeReader
+
+        codeReader.listVideoInputDevices()
+            .then((devices) => {
+                setVideoInputDevices(devices)
+                if (devices.length > 0) {
+                    // Try to find back camera first, otherwise use the first available
+                    const backCamera = devices.find(device => device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('environment'))
+                    setSelectedDeviceId(backCamera ? backCamera.deviceId : devices[0].deviceId)
+                } else {
+                    setError('No camera found')
+                }
+            })
+            .catch((err) => {
+                console.error('Error listing devices:', err)
+                setError('Failed to access camera devices.')
+            })
+
+        return () => {
+            if (readerRef.current) {
+                readerRef.current.reset()
+            }
+        }
+    }, [])
+
+    // Start scanning when selectedDeviceId changes
+    useEffect(() => {
+        if (!selectedDeviceId || !readerRef.current) return
+
         const startScanning = async () => {
             try {
-                // Reset scanned flag
+                setCameraReady(false)
+                setIsScanning(false)
                 scannedRef.current = false
 
-                // Create reader instance
-                const codeReader = new BrowserMultiFormatReader()
-                readerRef.current = codeReader
-
-                // Get available video input devices
-                const videoInputDevices = await codeReader.listVideoInputDevices()
-
-                if (videoInputDevices.length === 0) {
-                    setError('No camera found')
-                    return
-                }
-
-                // Use the first available camera (or back camera on mobile)
-                const selectedDeviceId = videoInputDevices[0].deviceId
+                // Reset previous stream if any
+                readerRef.current?.reset()
 
                 setIsScanning(true)
 
-                // Start continuous decoding
-                await codeReader.decodeFromVideoDevice(
+                await readerRef.current?.decodeFromVideoDevice(
                     selectedDeviceId,
                     videoRef.current!,
                     (result, error) => {
                         if (result && !scannedRef.current) {
-                            // Barcode detected and we haven't scanned yet!
-                            scannedRef.current = true // Mark as scanned
+                            scannedRef.current = true
                             const barcodeText = result.getText()
                             console.log('Barcode detected:', barcodeText)
 
-                            // Play beep sound
                             const beep = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwJHm/A7+CVMQ0PU6rk77FgGAU+ltryxnUpCS18y/DReSsIHG+/8N2VMRAM')
                             beep.play().catch(e => console.log('Audio play failed:', e))
 
-                            // Stop the scanner if autoClose is true
                             if (autoClose && readerRef.current) {
                                 readerRef.current.reset()
                             }
 
-                            // Call onScan callback
                             onScan(barcodeText)
 
-                            // If not auto-closing, reset the flag after 2 seconds to allow next scan
                             if (!autoClose) {
                                 setTimeout(() => {
                                     scannedRef.current = false
@@ -72,33 +88,24 @@ export default function BarcodeScanner({ onScan, onClose, autoClose = true }: Ba
                             }
                         }
 
-                        // Ignore NotFoundException - this is normal during continuous scanning
                         if (error && !(error instanceof NotFoundException)) {
                             console.error('Scanner error:', error)
                         }
                     }
                 )
 
-                // Mark camera as ready after a short delay
                 setTimeout(() => setCameraReady(true), 500)
 
             } catch (err) {
                 console.error('Error starting scanner:', err)
-                setError('Failed to access camera. Please grant camera permissions.')
+                setError('Failed to start camera stream.')
                 setIsScanning(false)
             }
         }
 
         startScanning()
 
-        // Cleanup on unmount
-        return () => {
-            if (readerRef.current) {
-                readerRef.current.reset()
-                readerRef.current = null
-            }
-        }
-    }, [autoClose])
+    }, [selectedDeviceId, autoClose, onScan])
 
     const handleClose = () => {
         if (readerRef.current) {
@@ -106,6 +113,14 @@ export default function BarcodeScanner({ onScan, onClose, autoClose = true }: Ba
         }
         onClose()
     }
+
+    const switchCamera = useCallback(() => {
+        if (videoInputDevices.length <= 1) return
+
+        const currentIndex = videoInputDevices.findIndex(d => d.deviceId === selectedDeviceId)
+        const nextIndex = (currentIndex + 1) % videoInputDevices.length
+        setSelectedDeviceId(videoInputDevices[nextIndex].deviceId)
+    }, [videoInputDevices, selectedDeviceId])
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/33">
@@ -123,16 +138,29 @@ export default function BarcodeScanner({ onScan, onClose, autoClose = true }: Ba
                 <div className="overflow-hidden rounded-2xl bg-white shadow-2xl border-2 border-blue-200">
                     {/* Header */}
                     <div className="border-b border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
-                        <div className="flex items-center gap-3">
-                            <div className="rounded-full bg-blue-500 p-2">
-                                <Camera className="h-6 w-6 text-white" />
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-full bg-blue-500 p-2">
+                                    <Camera className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-900">Scan Barcode</h2>
+                                    <p className="text-sm text-slate-600">
+                                        {cameraReady ? 'Position barcode within the frame' : 'Initializing camera...'}
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h2 className="text-xl font-bold text-slate-900">Scan Barcode</h2>
-                                <p className="text-sm text-slate-600">
-                                    {cameraReady ? 'Position barcode within the frame' : 'Initializing camera...'}
-                                </p>
-                            </div>
+
+                            {/* Switch Camera Button */}
+                            {videoInputDevices.length > 1 && (
+                                <button
+                                    onClick={switchCamera}
+                                    className="flex items-center gap-2 rounded-lg bg-white border border-blue-200 px-3 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 transition-colors"
+                                >
+                                    <RefreshCcw className="h-4 w-4" />
+                                    Switch
+                                </button>
+                            )}
                         </div>
                     </div>
 
