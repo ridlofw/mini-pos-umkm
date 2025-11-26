@@ -175,7 +175,7 @@ export default function InventoryPage() {
     }, [products])
 
     return (
-        <div className="container mx-auto max-w-6xl p-6">
+        <div className="container mx-auto max-w-6xl p-4 sm:p-6">
             <div className="mb-8 flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900">Inventory</h1>
@@ -230,10 +230,10 @@ export default function InventoryPage() {
                 </div>
             )}
 
-            <div className="grid gap-8 lg:grid-cols-3">
+            <div className="grid gap-8 grid-cols-1 lg:grid-cols-3">
                 {/* Form Section */}
                 <div className="lg:col-span-1">
-                    <div className="card sticky top-24">
+                    <div className="card lg:sticky lg:top-24">
                         <h2 className="mb-4 text-lg font-semibold text-slate-800">{isEditing ? 'Edit Product' : 'Add New Product'}</h2>
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                             <div className="input-group">
@@ -318,23 +318,23 @@ export default function InventoryPage() {
                             <table className="w-full text-left text-sm text-slate-600">
                                 <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                                     <tr>
-                                        <th className="px-6 py-4 font-semibold">Product Info</th>
-                                        <th className="px-6 py-4 font-semibold">Price</th>
-                                        <th className="px-6 py-4 font-semibold">Stock</th>
-                                        <th className="px-6 py-4 text-right font-semibold">Actions</th>
+                                        <th className="px-3 py-3 sm:px-6 sm:py-4 font-semibold">Product Info</th>
+                                        <th className="px-3 py-3 sm:px-6 sm:py-4 font-semibold">Price</th>
+                                        <th className="px-3 py-3 sm:px-6 sm:py-4 font-semibold">Stock</th>
+                                        <th className="px-3 py-3 sm:px-6 sm:py-4 text-right font-semibold">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {products?.map((product: Product) => (
                                         <tr key={product.barcode} className="transition-colors hover:bg-slate-50">
-                                            <td className="px-6 py-4">
+                                            <td className="px-3 py-3 sm:px-6 sm:py-4">
                                                 <div className="font-medium text-slate-900">{product.name}</div>
                                                 <div className="text-xs text-slate-400">{product.barcode}</div>
                                             </td>
-                                            <td className="px-6 py-4 font-medium">
+                                            <td className="px-3 py-3 sm:px-6 sm:py-4 font-medium">
                                                 Rp {product.price.toLocaleString()}
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-3 py-3 sm:px-6 sm:py-4">
                                                 <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${product.stock <= 5
                                                     ? 'bg-red-100 text-red-800'
                                                     : 'bg-green-100 text-green-800'
@@ -342,7 +342,7 @@ export default function InventoryPage() {
                                                     {product.stock} units
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-right">
+                                            <td className="px-3 py-3 sm:px-6 sm:py-4 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <button
                                                         onClick={() => startEdit(product)}
@@ -364,7 +364,7 @@ export default function InventoryPage() {
                                     ))}
                                     {products?.length === 0 && (
                                         <tr>
-                                            <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                                            <td colSpan={4} className="px-3 py-12 sm:px-6 text-center text-slate-500">
                                                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
                                                     <Search className="h-6 w-6 text-slate-400" />
                                                 </div>
