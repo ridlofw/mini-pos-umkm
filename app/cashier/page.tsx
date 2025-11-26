@@ -102,7 +102,27 @@ export default function CashierPage() {
         for (const item of cart) {
             const product = await db.products.get(item.barcode)
             if (product) {
-                await db.products.update(item.barcode, { stock: product.stock - item.quantity })
+                const newStock = product.stock - item.quantity
+                const updatedAt = new Date().toISOString()
+
+                // Update local product
+                await db.products.update(item.barcode, {
+                    stock: newStock,
+                    updated_at: updatedAt
+                })
+
+                // Queue for sync
+                await db.pending_product_changes.add({
+                    barcode: product.barcode,
+                    action: 'update',
+                    product_data: {
+                        ...product,
+                        stock: newStock,
+                        updated_at: updatedAt
+                    },
+                    created_at: updatedAt,
+                    synced: 0
+                })
             }
         }
 
